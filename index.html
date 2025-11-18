@@ -1058,94 +1058,158 @@
         </div>
     </footer>
 
-    <!-- Login Modals -->
-    <div class="modal" id="loginModal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2 id="modalTitle">Connexion</h2>
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="username">Nom d'utilisateur</label>
-                    <input type="text" id="username" required>
-                </div>
-                <div class="form-group">
-                    <label for="password">Mot de passe</label>
-                    <input type="password" id="password" required>
-                </div>
-                <button type="submit" class="submit-btn" id="submitLogin">
-                    <span id="login-text">Se connecter</span>
-                    <span id="login-spinner" class="loading" style="display: none;"></span>
-                </button>
-                <div id="loginError" style="color: #e74c3c; margin-top: 15px; display: none;">
-                    Nom d'utilisateur ou mot de passe incorrect!
-                </div>
-            </form>
-        </div>
+   <!-- Login Modals -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modalTitle">Connexion</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Nom d'utilisateur</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" class="submit-btn" id="submitLogin">
+                <span id="login-text">Se connecter</span>
+                <span id="login-spinner" class="loading" style="display: none;"></span>
+            </button>
+            <div id="loginError" style="color: #e74c3c; margin-top: 15px; display: none;">
+                Nom d'utilisateur ou mot de passe incorrect!
+            </div>
+        </form>
     </div>
+</div>
 
-    <script>
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js';
 
-        const SUPABASE_URL = 'https://evkayjaojrvioknihxce.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2a2F5amFvanJ2aW9rbmloeGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MzczNTAsImV4cCI6MjA3ODExMzM1MH0.ugM20uysg6ZSI3tECdsdoPvM-yLGXYVuTvR3uzk2yh0'; // ⚠️ REMPLACEZ PAR VOTRE CLÉ
-        
-      
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-  
-        let currentUser = null;
-        let currentUserType = null;
+// ⚠️ Utilisation sécurisée avec variables d'environnement
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        document.addEventListener('DOMContentLoaded', function() {
-         
-            checkExistingSession();
-            
-       
-            createFloatingElements();
-            
- 
-            const navLinks = document.querySelectorAll('.nav-link');
-            const sections = document.querySelectorAll('section');
-            const mobileMenu = document.querySelector('.mobile-menu');
-            const nav = document.querySelector('nav');
-            const logoutBtn = document.getElementById('logout-btn');
-            const logoutLink = document.getElementById('logout-link');
-            
+let currentUser = null;
+let currentUserType = null;
 
-            mobileMenu.addEventListener('click', function() {
-                nav.classList.toggle('active');
+// Vérifie si un utilisateur est déjà connecté
+async function checkExistingSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+        currentUser = session.user;
+        console.log("Utilisateur déjà connecté :", currentUser.email);
+        // Afficher section appropriée si nécessaire
+    }
+}
+
+// Fonction login avec Supabase
+async function login(username, password) {
+    const loginError = document.getElementById('loginError');
+    loginError.style.display = 'none';
+
+    const loginText = document.getElementById('login-text');
+    const loginSpinner = document.getElementById('login-spinner');
+    loginText.style.display = 'none';
+    loginSpinner.style.display = 'inline-block';
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: username,   // ton "username" doit être l'email
+        password: password
+    });
+
+    loginText.style.display = 'inline-block';
+    loginSpinner.style.display = 'none';
+
+    if (error) {
+        console.error("Erreur login :", error.message);
+        loginError.style.display = 'block';
+        return;
+    }
+
+    currentUser = data.user;
+    console.log("Utilisateur connecté :", currentUser.email);
+
+    // Fermer le modal
+    document.getElementById('loginModal').style.display = 'none';
+
+    // Rediriger ou afficher une section si besoin
+    // Exemple : document.getElementById('dashboard').style.display = 'block';
+}
+
+// Gestion du formulaire de login
+const loginForm = document.getElementById('loginForm');
+loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    await login(username, password);
+});
+
+// Gestion du modal
+function showLoginModal(type) {
+    const modal = document.getElementById('loginModal');
+    modal.style.display = 'block';
+    document.getElementById('modalTitle').textContent = type === 'admin' ? "Connexion Admin" : "Connexion";
+}
+
+document.querySelector('.close-modal').addEventListener('click', () => {
+    document.getElementById('loginModal').style.display = 'none';
+});
+
+// Logout
+async function logout() {
+    await supabase.auth.signOut();
+    currentUser = null;
+    console.log("Utilisateur déconnecté");
+}
+
+document.getElementById('logout-btn')?.addEventListener('click', logout);
+document.getElementById('logout-link')?.addEventListener('click', logout);
+
+// Navigation & sections
+document.addEventListener('DOMContentLoaded', function() {
+    checkExistingSession();
+    createFloatingElements();
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    const nav = document.querySelector('nav');
+
+    mobileMenu.addEventListener('click', function() {
+        nav.classList.toggle('active');
+    });
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = this.getAttribute('data-target');
+
+            if (target === 'admin-login') {
+                showLoginModal('admin');
+                return;
+            }
+
+            sections.forEach(section => {
+                section.style.display = 'none';
             });
-            
-     
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const target = this.getAttribute('data-target');
-                    
-           
-                    if (target === 'admin-login') {
-                        showLoginModal('admin');
-                        return;
-                    }
-                    
-          
-                    sections.forEach(section => {
-                        section.style.display = 'none';
-                    });
-                    
-         
-                    document.getElementById(target).style.display = 'block';
-                    
-       
-                    navLinks.forEach(link => link.classList.remove('active'));
-                    this.classList.add('active');
-                    
 
-                    nav.classList.remove('active');
-                    
-        
-                    window.scrollTo(0, 0);
-                });
+            document.getElementById(target).style.display = 'block';
+
+            navLinks.forEach(link => link.classList.remove('active'));
+            this.classList.add('active');
+
+            nav.classList.remove('active');
+            window.scrollTo(0, 0);
+        });
+    });
+});
+</script>
+
+
             });
             
 
