@@ -1200,14 +1200,14 @@ loginForm.addEventListener('submit', async function(e) {
 
     loginError.style.display = 'none';
 
-    // Spinner ON
+    
     loginText.style.display = 'none';
     loginSpinner.style.display = 'inline-block';
 
-    // Tentative authentification
+   
     const success = await authenticate(loginType, username, password);
 
-    // Spinner OFF
+   
     loginText.style.display = 'inline-block';
     loginSpinner.style.display = 'none';
 
@@ -1220,13 +1220,12 @@ loginForm.addEventListener('submit', async function(e) {
                 section.style.display = 'none';
             });
 
-            // Afficher panneau admin
+    
             document.getElementById('admin-panel').style.display = 'block';
 
-            // Désactiver liens
             navLinks.forEach(link => link.classList.remove('active'));
 
-            // Charger données admin
+           
             loadAdminData();
 
         } else {
@@ -1617,7 +1616,7 @@ function editLink(id) {
     alert('Fonctionnalité de modification à implémenter');
 }
 
-// 🚪 LOGOUT
+
 function logout() {
     currentUser = null;
     currentUserType = null;
@@ -1640,6 +1639,7 @@ function logout() {
     </script>
 </body>
 </html>
+
 
 
 
